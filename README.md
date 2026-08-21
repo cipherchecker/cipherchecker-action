@@ -97,6 +97,13 @@ Need an **audit-ready CBOM (CycloneDX 1.6) + NIST IR 8547 / CNSA 2.0 compliance 
 
 You can also scan any public repo in the browser, no install: **[cipherchecker.com](https://cipherchecker.com/?src=gh-action-readme)**
 
+## Support
+
+Open an [issue](https://github.com/cipherchecker/cipherchecker-action/issues), or email
+**support@cipherchecker.com**. See [SUPPORT.md](SUPPORT.md) for what to include, and
+[SECURITY.md](SECURITY.md) for security reports.
+
 ## License
 
-[Apache-2.0](LICENSE).
+Licensed to end users under [Apache-2.0](LICENSE). That license governs your use of this
+Action; there is no separate end user license agreement.
