@@ -982,7 +982,7 @@ function buildSarif(findings) {
         name: `QuantumVulnerable_${f.label.replace(/[^A-Za-z0-9]+/g, "")}`,
         shortDescription: { text: findingHeadline(f) },
         fullDescription: { text: f.why || `${f.label} should be migrated to a NIST PQC standard.` },
-        helpUri: "https://cipherchecker.com",
+        helpUri: "https://cipherchecker.com/?src=gh-action-sarif",
         defaultConfiguration: { level: f.severity === "critical" ? "error" : "warning" },
         properties: { tags: ["cryptography", "post-quantum"], "security-severity": f.severity === "critical" ? "8.0" : "4.0" }
       });
@@ -1060,7 +1060,7 @@ function buildSarif(findings) {
   }
   lines.push(`
 ---`);
-  lines.push(`\u{1F4CB} Need an **audit-ready CBOM + NIST IR 8547 / CNSA 2.0 compliance report** and **continuous monitoring** across your private/org repos? \u2192 **[cipherchecker.com](https://cipherchecker.com)**`);
+  lines.push(`\u{1F4CB} Need an **audit-ready CBOM + NIST IR 8547 / CNSA 2.0 compliance report** and **continuous monitoring** across your private/org repos? \u2192 **[cipherchecker.com](https://cipherchecker.com/?src=gh-action)**`);
   lines.push(`
 <sub>Call-sites and dependencies are signals to review, not proof of vulnerable use. Not a compliance guarantee.</sub>`);
   summary(lines.join("\n"));

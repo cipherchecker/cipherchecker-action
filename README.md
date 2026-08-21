@@ -93,9 +93,9 @@ MD5, SHA-1, DES and RC4 are reported as broken or deprecated **classically** —
 
 ## Related
 
-Need an **audit-ready CBOM (CycloneDX 1.6) + NIST IR 8547 / CNSA 2.0 compliance report** and **continuous monitoring** across your private and org repos? → **[cipherchecker.com](https://cipherchecker.com)**
+Need an **audit-ready CBOM (CycloneDX 1.6) + NIST IR 8547 / CNSA 2.0 compliance report** and **continuous monitoring** across your private and org repos? → **[cipherchecker.com](https://cipherchecker.com/?src=gh-action-readme)**
 
-You can also scan any public repo in the browser, no install: **[cipherchecker.com](https://cipherchecker.com)**
+You can also scan any public repo in the browser, no install: **[cipherchecker.com](https://cipherchecker.com/?src=gh-action-readme)**
 
 ## License
 
