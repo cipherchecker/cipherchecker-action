@@ -464,15 +464,23 @@ var require_dep_scanner = __commonJS({
     function scanRepo2(files) {
       const manifests = files.map((f) => scanManifest(f.filename, f.text)).filter((m) => m.recognized);
       const allFindings = manifests.flatMap((m) => m.findings.filter((f) => f.action === "review"));
-      const criticalLibs = allFindings.filter(
+      const criticalFindings = allFindings.filter(
         (f) => f.primitives.some((p) => p.severity === "critical")
-      ).length;
+      );
+      const flaggedPackages = new Set(allFindings.map((f) => f.package));
+      const criticalPackages = new Set(criticalFindings.map((f) => f.package));
+      const criticalLibs = criticalPackages.size;
       const primitiveLabels = allFindings.flatMap((f) => f.primitives.map((p) => p.label));
       const { score, grade } = scoreFindings(primitiveLabels);
       return {
         manifestsScanned: manifests.length,
-        librariesFlagged: allFindings.length,
+        librariesFlagged: flaggedPackages.size,
+        // unique packages
         criticalLibraries: criticalLibs,
+        // unique packages with a critical primitive
+        flaggedOccurrences: allFindings.length,
+        // package x manifest occurrences
+        criticalOccurrences: criticalFindings.length,
         score,
         // null when no crypto libraries were detected
         grade,
@@ -531,6 +539,8 @@ var require_dep_scanner = __commonJS({
           manifestsScanned: 0,
           librariesFlagged: 0,
           criticalLibraries: 0,
+          flaggedOccurrences: 0,
+          criticalOccurrences: 0,
           manifests: [],
           summary: "No recognized package manifests found in this repository."
         };
@@ -851,7 +861,11 @@ var require_migration_planner = __commonJS({
           ecosystemNotes: [...b.ecosystems].map((e) => ({ ecosystem: e, note: ECOSYSTEM_NOTES[e] })).filter((x) => x.note)
         };
       }).sort((a, b) => TIERS[a.tier].rank - TIERS[b.tier].rank);
-      const actionable = priorities.reduce((n, p) => n + p.packages.length, 0);
+      const actionablePairs = new Set(priorities.flatMap((p) => p.packages));
+      const actionable = actionablePairs.size;
+      const actionablePackages = new Set(
+        [...actionablePairs].map((s) => s.replace(/ \([^)]*\)$/, ""))
+      ).size;
       return {
         repo: scan.repo || null,
         grade: scan.grade,
@@ -859,7 +873,7 @@ var require_migration_planner = __commonJS({
         generatedBy: "deterministic",
         caveat: GLOBAL_CAVEAT,
         priorities,
-        summary: actionable ? `${actionable} dependency finding${actionable === 1 ? "" : "s"} across ${priorities.length} priority tier${priorities.length === 1 ? "" : "s"}. Work top-down: Tier A is already broken, Tier B carries retroactive "harvest now, decrypt later" risk.` : "No actionable quantum-vulnerable dependencies were found in the scanned manifests."
+        summary: actionable ? `${actionablePackages} dependenc${actionablePackages === 1 ? "y" : "ies"} to address${actionable > actionablePackages ? ` (${actionable} occurrences across manifests)` : ""} across ${priorities.length} priority tier${priorities.length === 1 ? "" : "s"}. Work top-down: Tier A is already broken, Tier B carries retroactive "harvest now, decrypt later" risk.` : "No actionable quantum-vulnerable dependencies were found in the scanned manifests."
       };
     }
     function planToMarkdown(plan) {
@@ -1041,7 +1055,8 @@ function buildSarif(findings) {
   lines.push(`**Grade ${grade}${score != null ? ` \xB7 ${score}/100` : ""}** \u2014 scanned **${sourceFiles.length}** source files + **${deps.manifestsScanned}** manifests. *Your code never left the runner.*`);
   lines.push(`
 - **${src.criticalCallSites}** quantum-critical crypto call-site${src.criticalCallSites === 1 ? "" : "s"} in source`);
-  lines.push(`- **${deps.librariesFlagged}** quantum-vulnerable dependenc${deps.librariesFlagged === 1 ? "y" : "ies"} flagged (${deps.criticalLibraries} critical)`);
+  const depOccurrences = deps.flaggedOccurrences != null ? deps.flaggedOccurrences : deps.librariesFlagged;
+  lines.push(`- **${deps.librariesFlagged}** quantum-vulnerable dependenc${deps.librariesFlagged === 1 ? "y" : "ies"} flagged (${deps.criticalLibraries} critical)` + (depOccurrences > deps.librariesFlagged ? `, in **${depOccurrences}** occurrences across ${deps.manifestsScanned} manifests` : ""));
   if (src.findings && src.findings.length) {
     lines.push(`
 ### Call-sites (source)`);
