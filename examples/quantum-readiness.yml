@@ -1,0 +1,23 @@
+# Copy this file to .github/workflows/quantum-readiness.yml in your repository.
+name: Quantum readiness
+
+on: [push, pull_request]
+
+jobs:
+  cipherchecker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # only needed for the SARIF upload step
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cipherchecker/cipherchecker-action@v1
+        with:
+          fail-on: critical          # critical | any | never
+          sarif-file: cipherchecker.sarif
+
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: cipherchecker.sarif

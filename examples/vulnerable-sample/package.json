@@ -1,0 +1,11 @@
+{
+  "name": "cipherchecker-vulnerable-sample",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fixture for the CipherChecker Action self-test. Not a real package.",
+  "dependencies": {
+    "node-rsa": "^1.1.1",
+    "elliptic": "^6.5.4",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

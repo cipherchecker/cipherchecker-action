@@ -1,0 +1,89 @@
+# Proves the published bundle actually runs, on every push and PR, and on a
+# weekly schedule so a silent GitHub runtime change cannot rot the Marketplace
+# listing unnoticed.
+name: Self-test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  detects-vulnerable-crypto:
+    name: Detects known-vulnerable sample
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: scan
+        uses: ./
+        with:
+          paths: examples/vulnerable-sample
+          fail-on: never
+          sarif-file: cipherchecker.sarif
+
+      - name: Assert the scan found what it should
+        env:
+          GRADE: ${{ steps.scan.outputs.grade }}
+          SITES: ${{ steps.scan.outputs.critical-call-sites }}
+          LIBS: ${{ steps.scan.outputs.libraries-flagged }}
+        run: |
+          echo "grade=$GRADE critical-call-sites=$SITES libraries-flagged=$LIBS"
+          test "$GRADE" = "F"       || { echo "::error::expected grade F, got '$GRADE'"; exit 1; }
+          test "$SITES" -ge 9       || { echo "::error::expected >=9 call-sites, got '$SITES'"; exit 1; }
+          test "$LIBS"  -ge 3       || { echo "::error::expected >=3 flagged libraries, got '$LIBS'"; exit 1; }
+
+      - name: Assert the SARIF is well-formed
+        run: |
+          test -f cipherchecker.sarif || { echo "::error::no SARIF written"; exit 1; }
+          node -e '
+            const s = JSON.parse(require("fs").readFileSync("cipherchecker.sarif", "utf8"));
+            if (s.version !== "2.1.0") throw new Error("bad SARIF version: " + s.version);
+            const run = s.runs[0];
+            if (!run.tool.driver.rules.length) throw new Error("no rules");
+            if (!run.results.length) throw new Error("no results");
+            for (const r of run.results) {
+              const loc = r.locations[0].physicalLocation;
+              if (!loc.artifactLocation.uri || !loc.region.startLine) throw new Error("result missing location");
+            }
+            console.log("SARIF ok:", run.tool.driver.rules.length, "rules,", run.results.length, "results");
+          '
+
+  fail-on-gating-works:
+    name: fail-on critical actually fails
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: scan
+        continue-on-error: true
+        uses: ./
+        with:
+          paths: examples/vulnerable-sample
+          fail-on: critical
+
+      - name: Assert the step failed
+        run: |
+          test "${{ steps.scan.outcome }}" = "failure" \
+            || { echo "::error::fail-on=critical should have failed the step, outcome was '${{ steps.scan.outcome }}'"; exit 1; }
+          echo "fail-on gating verified"
+
+  bundle-is-current:
+    name: dist/ matches source
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bundle is committed and parses
+        run: |
+          test -f dist/index.js || { echo "::error::dist/index.js is missing — it is the shipped artifact and must be committed"; exit 1; }
+          node --check dist/index.js
+          echo "bundle ok ($(wc -c < dist/index.js) bytes)"

@@ -1,0 +1,35 @@
+name: 'CipherChecker — Post-Quantum Crypto Scan'
+description: 'Scan your code for quantum-vulnerable cryptography (RSA, ECDSA, ECDH, X25519, Ed25519, …) and get a prioritized NIST migration plan. Runs entirely on your runner — your code never leaves the box.'
+author: 'CipherChecker'
+branding:
+  icon: 'shield'
+  color: 'orange'
+inputs:
+  paths:
+    description: 'Comma-separated paths to scan, relative to the repo root.'
+    required: false
+    default: '.'
+  fail-on:
+    description: 'When to fail the job: "critical" (default), "any", or "never".'
+    required: false
+    default: 'critical'
+  sarif-file:
+    description: 'If set, write SARIF results to this path. Upload it with github/codeql-action/upload-sarif to see findings in the Security tab.'
+    required: false
+    default: ''
+  max-files:
+    description: 'Maximum number of files to scan.'
+    required: false
+    default: '20000'
+outputs:
+  score:
+    description: 'Quantum-readiness score 0–100 (empty if nothing detected).'
+  grade:
+    description: 'Letter grade A–F, or N/A.'
+  critical-call-sites:
+    description: 'Number of quantum-critical crypto call-sites found in source.'
+  libraries-flagged:
+    description: 'Number of quantum-vulnerable dependencies flagged.'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
