@@ -499,6 +499,9 @@ var require_dep_scanner = __commonJS({
       if (shortMatch) return { owner: shortMatch[1], repo: shortMatch[2] };
       return null;
     }
+    function rateLimitError(hasToken, where) {
+      return hasToken ? `GitHub's API rate limit was reached${where ? " " + where : ""}. This is a limit on our side, not on your repository \u2014 please retry in a few minutes.` : `GitHub API rate limit reached${where ? " " + where : ""} (60 requests/hour without a token). Supply a token to raise it to 5,000/hour.`;
+    }
     async function scanGitHubRepo(ref, opts = {}) {
       const gh = parseGitHubRef(ref);
       if (!gh) return { ok: false, error: "Could not parse a GitHub repo from that input. Use a URL like github.com/owner/repo or the short form owner/repo." };
@@ -512,7 +515,7 @@ var require_dep_scanner = __commonJS({
       try {
         const r = await doFetch(api, { headers });
         if (r.status === 404) return { ok: false, error: `Repository ${gh.owner}/${gh.repo} not found (it may be private or misspelled).` };
-        if (r.status === 403) return { ok: false, error: "GitHub API rate limit reached (60 requests/hour unauthenticated). Add a token to raise the limit.", rateLimited: true };
+        if (r.status === 403) return { ok: false, error: rateLimitError(!!opts.token), rateLimited: true };
         if (!r.ok) return { ok: false, error: `GitHub API returned ${r.status} for the repository.` };
         repoMeta = await r.json();
       } catch (e) {
@@ -522,7 +525,7 @@ var require_dep_scanner = __commonJS({
       let tree;
       try {
         const r = await doFetch(`${api}/git/trees/${encodeURIComponent(branch)}?recursive=1`, { headers });
-        if (r.status === 403) return { ok: false, error: "GitHub API rate limit reached while reading the file tree.", rateLimited: true };
+        if (r.status === 403) return { ok: false, error: rateLimitError(!!opts.token, "while reading the file tree"), rateLimited: true };
         if (!r.ok) return { ok: false, error: `Could not read the repository file tree (${r.status}).` };
         tree = await r.json();
       } catch (e) {
@@ -696,6 +699,9 @@ var require_source_scanner = __commonJS({
         summary: criticalSites > 0 ? `${criticalSites} quantum-vulnerable crypto call-site${criticalSites === 1 ? "" : "s"} found across ${filesWithFindings} file${filesWithFindings === 1 ? "" : "s"}. Each is a usage signal \u2014 confirm at the cited line.` : findings.length ? "Only weakened-or-safe crypto call-sites were detected; no quantum-critical usage in the scanned source." : "No recognized crypto call-sites detected in the scanned source."
       };
     }
+    function rateLimitError(hasToken, where) {
+      return hasToken ? `GitHub's API rate limit was reached${where ? " " + where : ""}. This is a limit on our side, not on your repository \u2014 please retry in a few minutes.` : `GitHub API rate limit reached${where ? " " + where : ""} (60 requests/hour without a token). Supply a token to raise it to 5,000/hour.`;
+    }
     async function scanGitHubSource(ref, opts = {}) {
       const gh = parseGitHubRef(ref);
       if (!gh) return { ok: false, error: "Could not parse a GitHub repo from that input (use github.com/owner/repo)." };
@@ -709,7 +715,7 @@ var require_source_scanner = __commonJS({
       try {
         const r = await doFetch(api, { headers });
         if (r.status === 404) return { ok: false, error: `Repository ${gh.owner}/${gh.repo} not found (private or misspelled).` };
-        if (r.status === 403) return { ok: false, error: "GitHub API rate limit reached (60/hour unauthenticated).", rateLimited: true };
+        if (r.status === 403) return { ok: false, error: rateLimitError(!!opts.token), rateLimited: true };
         if (!r.ok) return { ok: false, error: `GitHub API returned ${r.status}.` };
         repoMeta = await r.json();
       } catch (e) {
@@ -719,7 +725,7 @@ var require_source_scanner = __commonJS({
       let tree;
       try {
         const r = await doFetch(`${api}/git/trees/${encodeURIComponent(branch)}?recursive=1`, { headers });
-        if (r.status === 403) return { ok: false, error: "GitHub API rate limit reached reading the tree.", rateLimited: true };
+        if (r.status === 403) return { ok: false, error: rateLimitError(!!opts.token, "while reading the file tree"), rateLimited: true };
         if (!r.ok) return { ok: false, error: `Could not read the file tree (${r.status}).` };
         tree = await r.json();
       } catch (e) {
