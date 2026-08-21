@@ -1,5 +1,5 @@
 name: 'CipherChecker — Post-Quantum Crypto Scan'
-description: 'Scan your code for quantum-vulnerable cryptography (RSA, ECDSA, ECDH, X25519, Ed25519, …) and get a prioritized NIST migration plan. Runs entirely on your runner — your code never leaves the box.'
+description: 'Find quantum-vulnerable cryptography (RSA, ECDSA, ECDH) and get a NIST PQC migration plan. Runs entirely on your runner.'
 author: 'CipherChecker'
 branding:
   icon: 'shield'
